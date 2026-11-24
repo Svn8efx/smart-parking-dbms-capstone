@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Smart Parking</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+ body{font-family:Calibri,Arial,sans-serif;max-width:900px;margin:24px auto;padding:0 12px;color:#222}
+ h1{color:#1F3A5F;font-size:26px} h2{font-size:18px;margin-top:28px;border-bottom:1px solid #ccc;padding-bottom:4px}
+ label{display:inline-block;margin:4px 12px 4px 0;font-size:14px} input,select,button{font-size:14px;padding:4px}
+ table{border-collapse:collapse;width:100%;font-size:14px} td,th{border:1px solid #ccc;padding:4px 8px;text-align:left}
+ #msg{margin-top:12px;padding:8px;background:#f2f2f2;min-height:20px}
+ .AVAILABLE{color:#1a7f37}.OCCUPIED{color:#b42318}.RESERVED{color:#b54708}.MAINTENANCE{color:#667085}
+</style></head><body>
+<h1>Smart Parking Management</h1>
+<div id="msg">Ready.</div>
+
+<h2>Book a slot</h2>
+<label>User ID <input id="uid" type="number" value="31" style="width:70px"></label>
+<label>Vehicle ID <input id="vid" type="number" value="31" style="width:70px"></label>
+<label>From <input id="start" type="datetime-local"></label>
+<label>To <input id="end" type="datetime-local"></label><br>
+<label>Slot ID <input id="slot" type="number" value="1" style="width:70px"></label>
+<button onclick="reserve()">Reserve this slot</button>
+<label style="margin-left:20px">Zone ID <input id="zone" type="number" value="1" style="width:60px"></label>
+<button onclick="allocate()">Auto-allocate in zone</button>
+
+<h2>My reservations</h2>
+<button onclick="loadRes()">Refresh</button>
+<table id="res"><thead><tr><th>ID</th><th>Vehicle</th><th>Zone</th><th>Slot</th><th>From</th><th>To</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+
+<h2>Live slot availability</h2>
+<button onclick="loadAvail()">Refresh</button>
+<table id="av"><thead><tr><th>Zone</th><th>Slot</th><th>Status</th></tr></thead><tbody></tbody></table>
+
+<script>
+const $ = id => document.getElementById(id);
+const show = m => $("msg").textContent = m;
+async function post(url, body){
+  const r = await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  return r.json();
+}
+const form = () => ({user_id:$("uid").value, vehicle_id:$("vid").value, start:$("start").value, end:$("end").value});
+async function reserve(){ const d=await post("/api/reserve",{...form(),slot_id:$("slot").value}); show(d.message); loadRes(); loadAvail(); }
+async function allocate(){ const d=await post("/api/allocate",{...form(),zone_id:$("zone").value});
+  show(d.message + (d.slot_id ? " (slot "+d.slot_id+")" : "")); loadRes(); loadAvail(); }
+async function cancelRes(id){ const d=await post("/api/cancel",{user_id:$("uid").value,res_id:id}); show(d.message); loadRes(); }
+async function loadRes(){
+  const rows = await (await fetch("/api/reservations?user_id="+$("uid").value)).json();
+  $("res").tBodies[0].innerHTML = rows.map(r=>`<tr><td>${r.res_id}</td><td>${r.reg_no}</td><td>${r.zone_name}</td><td>${r.slot_code}</td>
+   <td>${r.start_time}</td><td>${r.end_time}</td><td>${r.status}</td>
+   <td>${r.status==="CONFIRMED"?`<button onclick="cancelRes(${r.res_id})">Cancel</button>`:""}</td></tr>`).join("");
+}
+async function loadAvail(){
+  const rows = await (await fetch("/api/availability")).json();
+  $("av").tBodies[0].innerHTML = rows.map(r=>`<tr><td>${r.zone_name}</td><td>${r.slot_code}</td><td class="${r.current_status}">${r.current_status}</td></tr>`).join("");
+}
+loadRes(); loadAvail();
+</script></body></html>

@@ -7,8 +7,6 @@
 | Name | Roll No. | Section |
 | --- | --- | --- |
 | Anish Kumar Jha | 2501010273 | D |
-| Aryan Kumar | 2501010043 | D |
-| Bhowmik Vij | 2501010195 | D |
 
 **Live demo:** [smart-parking-dbms-capstone-production.up.railway.app](https://smart-parking-dbms-capstone-production.up.railway.app) · **Code:** [github.com/Svn8efx/smart-parking-dbms-capstone](https://github.com/Svn8efx/smart-parking-dbms-capstone)
 
